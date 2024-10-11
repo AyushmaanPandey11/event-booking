@@ -1,0 +1,98 @@
+package routes
+
+import (
+	"net/http"
+	"strconv"
+
+	"eventBooking.com/m/models"
+	"github.com/gin-gonic/gin"
+)
+
+func healthCheck(context *gin.Context) {
+	context.JSON(http.StatusOK, gin.H{"message": "Server is Working Properly"})
+}
+
+func getEvents(context *gin.Context) {
+	events, err := models.GetAllEvents()
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "error occured in fetching events from DB"})
+		return
+	}
+	context.JSON(http.StatusOK, events)
+}
+
+func addEvent(context *gin.Context) {
+	var event models.Event
+	err := context.ShouldBindJSON(&event)
+
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Invalid Data sent!"})
+	}
+
+	event.ID = 1
+	err = event.Save()
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "error occured in adding event to DB"})
+		return
+	}
+	context.JSON(http.StatusAccepted, gin.H{"message": "Event created!", "event": event})
+}
+
+func getEventById(context *gin.Context) {
+	eventId, err := strconv.ParseInt(context.Param("id"), 10, 64)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Invalid event id"})
+		return
+	}
+	event, err := models.GetEventById(eventId)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not find the event"})
+		return
+	}
+	context.JSON(http.StatusAccepted, gin.H{"message": "Event Found Succesfully", "event": event})
+}
+
+func updateEvent(context *gin.Context) {
+	eventId, err := strconv.ParseInt(context.Param("id"), 10, 64)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Invalid event id"})
+		return
+	}
+	_, err = models.GetEventById(eventId)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not fetch the event"})
+		return
+	}
+	var updatedEvent models.Event
+	err = context.ShouldBindJSON(&updatedEvent)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not parse the event"})
+		return
+	}
+	updatedEvent.ID = eventId
+	err = updatedEvent.Update()
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "Error in updating event"})
+		return
+	}
+	context.JSON(http.StatusAccepted, gin.H{"message": "Updated Succesfully", "Event": updatedEvent})
+}
+
+func deleteEvent(context *gin.Context) {
+	eventId, err := strconv.ParseInt(context.Param("id"), 10, 64)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Invalid event id"})
+		return
+	}
+	event, err := models.GetEventById(eventId)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not fetch the event"})
+		return
+	}
+	err = event.Delete()
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "Error in deleting the event"})
+		return
+	}
+	context.JSON(http.StatusOK, gin.H{"message": "Event deleted successfully", "event": event})
+}

@@ -1,16 +1,14 @@
 package main
 
 import (
-	"net/http"
-
+	"eventBooking.com/m/db"
+	"eventBooking.com/m/routes"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	db.InitDb()
 	server := gin.Default()
-	server.GET("/health-check", healthCheck)
+	routes.RegisterRoutes(server)
 	server.Run(":8080")
-}
-func healthCheck(context *gin.Context) {
-	context.JSON(http.StatusOK, gin.H{"message": "Server is Working Properly"})
 }
