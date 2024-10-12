@@ -29,7 +29,7 @@ func addEvent(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"message": "Invalid Data sent!"})
 	}
 
-	event.ID = 1
+	event.Id = 1
 	err = event.Save()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"message": "error occured in adding event to DB"})
@@ -69,7 +69,7 @@ func updateEvent(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not parse the event"})
 		return
 	}
-	updatedEvent.ID = eventId
+	updatedEvent.Id = eventId
 	err = updatedEvent.Update()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"message": "Error in updating event"})

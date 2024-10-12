@@ -7,12 +7,12 @@ import (
 )
 
 type Event struct {
-	ID          int64
-	Name        string `binding:"required"`
-	Description string `binding:"required"`
-	Location    string `binding:"required"`
-	DateTime    time.Time
-	User_id     int `binding:"required"`
+	Id          int64
+	name        string `binding:"required"`
+	description string `binding:"required"`
+	location    string `binding:"required"`
+	dateTime    time.Time
+	user_id     int `binding:"required"`
 }
 
 func (e Event) Save() error {
@@ -25,12 +25,12 @@ func (e Event) Save() error {
 		return err
 	}
 	defer stmt.Close()
-	result, err := stmt.Exec(e.Name, e.Description, e.Location, e.DateTime, e.User_id)
+	result, err := stmt.Exec(e.name, e.description, e.location, e.dateTime, e.user_id)
 	if err != nil {
 		return err
 	}
 	id, err := result.LastInsertId()
-	e.ID = id
+	e.Id = id
 	return err
 }
 
@@ -44,7 +44,7 @@ func (event Event) Update() error {
 		return err
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(event.ID, event.Name, event.Description, event.Location, event.DateTime, event.User_id, event.ID)
+	_, err = stmt.Exec(event.name, event.description, event.location, event.dateTime, event.user_id, event.Id)
 	return err
 }
 
@@ -57,7 +57,7 @@ func (event Event) Delete() error {
 		return err
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(event.ID)
+	_, err = stmt.Exec(event.Id)
 	return err
 }
 
@@ -71,7 +71,7 @@ func GetAllEvents() ([]Event, error) {
 	var events []Event
 	for rows.Next() {
 		var event Event
-		err := rows.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.DateTime, &event.User_id)
+		err := rows.Scan(&event.Id, &event.name, &event.description, &event.location, &event.dateTime, &event.user_id)
 		if err != nil {
 			return nil, err
 		}
@@ -83,7 +83,7 @@ func GetEventById(eventId int64) (*Event, error) {
 	query := "SELECT * FROM events WHERE ID = ?"
 	row := db.DB.QueryRow(query, eventId)
 	var event Event
-	err := row.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.DateTime, &event.User_id)
+	err := row.Scan(&event.Id, &event.name, &event.description, &event.location, &event.dateTime, &event.user_id)
 	if err != nil {
 		return nil, err
 	}
