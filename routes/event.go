@@ -28,8 +28,8 @@ func addEvent(context *gin.Context) {
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"message": "Invalid Data sent!"})
 	}
-
-	event.Id = 1
+	userId := context.GetInt64("userId")
+	event.User_id = userId
 	err = event.Save()
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"message": "error occured in adding event to DB"})
@@ -58,9 +58,14 @@ func updateEvent(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"message": "Invalid event id"})
 		return
 	}
-	_, err = models.GetEventById(eventId)
+	event, err := models.GetEventById(eventId)
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not fetch the event"})
+		return
+	}
+	userId := context.GetInt64("userId")
+	if userId != event.User_id {
+		context.JSON(http.StatusUnauthorized, gin.H{"message": "unauthorized access"})
 		return
 	}
 	var updatedEvent models.Event
@@ -87,6 +92,11 @@ func deleteEvent(context *gin.Context) {
 	event, err := models.GetEventById(eventId)
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"message": "Could not fetch the event"})
+		return
+	}
+	userId := context.GetInt64("userId")
+	if userId != event.User_id {
+		context.JSON(http.StatusUnauthorized, gin.H{"message": "unauthorized access"})
 		return
 	}
 	err = event.Delete()

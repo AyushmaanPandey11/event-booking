@@ -1,17 +1,20 @@
 package models
 
 import (
+	"errors"
+
 	"eventBooking.com/m/db"
+	"eventBooking.com/m/utils"
 )
 
 type User struct {
 	Id       int64
 	name     string `binding:"required"`
-	email    string `binding:"required"`
+	Email    string `binding:"required"`
 	password string `binding:"required"`
 }
 
-func (u User) Save() error {
+func (u *User) Save() error {
 	query := `
 		INSERT INTO users(name,email,password) 
 		VALUES (?,?,?)
@@ -21,13 +24,35 @@ func (u User) Save() error {
 		return err
 	}
 	defer stmt.Close()
-	result, err := stmt.Exec(u.name, u.email, u.password)
+
+	hashedPassword, err := utils.HashPassword(u.password)
+	if err != nil {
+		return err
+	}
+	result, err := stmt.Exec(u.name, u.Email, hashedPassword)
 	if err != nil {
 		return err
 	}
 	id, err := result.LastInsertId()
 	u.Id = id
 	return err
+}
+
+func (u *User) ValidateCredentials() error {
+	query := `
+		SELECT id,password FROM users WHERE email = ?
+	`
+	row := db.DB.QueryRow(query, u.Email)
+	var dBPassword string
+	err := row.Scan(&u.Id, &dBPassword)
+	if err != nil {
+		return err
+	}
+	isValid := utils.ComparePasswords(u.password, dBPassword)
+	if !isValid {
+		return errors.New("credentials invalid")
+	}
+	return nil
 }
 
 func (u User) Update() error {
@@ -40,7 +65,7 @@ func (u User) Update() error {
 		return err
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(u.name, u.email, u.password)
+	_, err = stmt.Exec(u.name, u.Email, u.password)
 	return err
 }
 
@@ -67,7 +92,7 @@ func GetAllUsers() ([]User, error) {
 	var allUsers []User
 	for rows.Next() {
 		var user User
-		err := rows.Scan(&user.Id, &user.name, &user.email)
+		err := rows.Scan(&user.Id, &user.name, &user.Email)
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +109,7 @@ func GetUserById(id int64) (*User, error) {
 	}
 	defer stmt.Close()
 	var user User
-	err = stmt.Scan(&user.Id, &user.name, &user.email)
+	err = stmt.Scan(&user.Id, &user.name, &user.Email)
 	if err != nil {
 		return nil, err
 	}

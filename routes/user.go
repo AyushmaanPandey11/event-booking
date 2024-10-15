@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"eventBooking.com/m/models"
+	"eventBooking.com/m/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,7 +22,32 @@ func registerUser(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"message": "Error inserting user to database"})
 		return
 	}
-	context.JSON(http.StatusBadRequest, gin.H{"message": "User Created Successfully", "user": newUser})
+	token, err := utils.GenerateToken(newUser.Email, newUser.Id)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "Error Creating token"})
+		return
+	}
+	context.JSON(http.StatusBadRequest, gin.H{"message": "User Created Successfully", "user": newUser, "token": token})
+}
+
+func loginUser(context *gin.Context) {
+	var user models.User
+	err := context.ShouldBindJSON(&user)
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"message": "invalid credentials"})
+		return
+	}
+	err = user.ValidateCredentials()
+	if err != nil {
+		context.JSON(http.StatusUnauthorized, gin.H{"message": "Unavailable to login"})
+		return
+	}
+	token, err := utils.GenerateToken(user.Email, user.Id)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "Error Creating token"})
+		return
+	}
+	context.JSON(http.StatusOK, gin.H{"message": "user logged in successfully", "user": user, "token": token})
 }
 
 func getAllUserDetails(context *gin.Context) {
